@@ -9,8 +9,8 @@ go
 drop table if exists dbo.Employee
 drop table if exists dbo.Room
 drop table if exists dbo.GroupBusiness
-drop table if exists dbo.Customer
 drop table if exists dbo.Agency
+drop table if exists dbo.Customer
 drop table if exists dbo.Booking
 drop table if exists dbo.BookingDetail
 drop table if exists dbo.Compensation
@@ -40,22 +40,8 @@ create table Room (
 
 -- group table
 create table GroupBusiness(
-	GroupID int primary key,
-	CustomerID int,
+	GroupID nvarchar(5) primary key,
 	Name nvarchar(50)
-)
-
--- customer table
-create table Customer (
-    CustomerID int primary key identity,
-	GroupID int,
-    Name nvarchar(100),
-    Phone nvarchar(15),
-    Email nvarchar(100),
-    CMND nvarchar(20),
-    Address nvarchar(max),
-    Role nvarchar(50),
-	foreign key (GroupID) references GroupBusiness(GroupID)
 )
 
 -- agency table
@@ -67,10 +53,23 @@ create table Agency (
     Address nvarchar(max)
 )
 
+-- customer table
+create table Customer (
+    CustomerID int primary key identity,
+	GroupID nvarchar(5),
+    Name nvarchar(100),
+    Phone nvarchar(15),
+    Email nvarchar(100),
+    CMND nvarchar(20),
+    Address nvarchar(max),
+    Role nvarchar(50),
+	foreign key (GroupID) references GroupBusiness(GroupID)
+)
+
 -- booking table
 create table Booking (
     BookingID int primary key identity,
-    GroupID int,
+    GroupID nvarchar(5),
     CustomerID int,
     AgencyID int,
     NamePerson nvarchar(100),
@@ -115,7 +114,7 @@ create table Compensation (
 -- account table
 create table Account (
     AccountID int primary key identity,
-    GroupID int,
+    GroupID nvarchar(5),
     Username nvarchar(50) unique,
     Password nvarchar(255),
     Status nvarchar(50),
@@ -445,4 +444,19 @@ insert into dbo.Room(RoomID, Type, Floor, Price, SingleBed, CoupleBed, NumberPer
 	(1318, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
 	(1319, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
 	(1320, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống')
+go
+
+select * from dbo.Room
+go
+
+-- Dữ liệu GroupBusiness
+insert into dbo.GroupBusiness(GroupID, Name) values 
+	(N'A001', N'Công Ty S'),
+	(N'B002', N'Công Ty F'),
+	(N'C003', N'Công Ty P'),
+	(N'D004', N'Công Ty T'),
+	(N'F005', N'Công Ty N')
+go
+
+select * from dbo.GroupBusiness
 go

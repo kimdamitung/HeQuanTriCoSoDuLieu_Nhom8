@@ -48,7 +48,7 @@ create table GroupBusiness(
 create table Agency (
     AgencyID int primary key identity,
     Name nvarchar(100),
-    Phone nvarchar(15),
+    Phone nvarchar(15) check (Phone like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
     Email nvarchar(100),
     Address nvarchar(max)
 )
@@ -58,7 +58,7 @@ create table Customer (
     CustomerID int primary key identity,
 	GroupID nvarchar(5),
     Name nvarchar(100),
-    Phone nvarchar(15),
+    Phone nvarchar(15) check (Phone like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
     Email nvarchar(100),
     CMND nvarchar(20),
     Address nvarchar(max),
@@ -459,4 +459,14 @@ insert into dbo.GroupBusiness(GroupID, Name) values
 go
 
 select * from dbo.GroupBusiness
+go
+
+-- Dữ liệu Agency
+insert into dbo.Agency(Name, Phone, Email, Address) values
+	(N'HolyBirdResort', '0123456789', 'holybirdresort@gmail.com', N'Nha Trang, Việt Nam'),
+	(N'HolyBirdResort 2', '0987654321', 'holybirdresortchinhanh2@gmail.com', N'467 Lê Văn Thọ, Phường 09, Quận Gò Vấp, Hồ Chí Minh, Việt Nam'),
+	(N'HolyBirdResort 3', '0864213579', 'holybirdresortchinhanh3@gmail.com', N'78/4 Quốc lộ 1, Phường Linh Trung, Quận Thủ Đức, Hồ Chí Minh, Việt Nam')
+go
+
+select * from dbo.Agency
 go

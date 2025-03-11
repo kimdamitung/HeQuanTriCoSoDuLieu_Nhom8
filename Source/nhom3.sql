@@ -4,26 +4,11 @@ go
 use HolyBirdResort
 go
 
--- delete table 
-
-drop table if exists dbo.Employee
-drop table if exists dbo.Room
-drop table if exists dbo.GroupBusiness
-drop table if exists dbo.Agency
-drop table if exists dbo.Customer
-drop table if exists dbo.Booking
-drop table if exists dbo.BookingDetail
-drop table if exists dbo.Compensation
-drop table if exists dbo.Account
-drop table if exists dbo.Card
-drop table if exists dbo.Payment
-drop table if exists dbo.PaymentDetail
-
 -- employee table
 create table Employee (
     EmployeeID int primary key identity,
     Name nvarchar(100),
-    Role nvarchar(50)
+    Role nvarchar(50) check (Role in (N'Quản lí', N'Lễ Tân'))
 )
 
 -- room table
@@ -35,7 +20,7 @@ create table Room (
     SingleBed int,
     CoupleBed int,
     NumberPerson int,
-	Status nvarchar(50)
+	Status nvarchar(50) check (Status in (N'Trống', N'Đã đặt', N'Đang thanh toán'))
 )
 
 -- group table
@@ -62,7 +47,7 @@ create table Customer (
     Email nvarchar(100) null,
     CMND nvarchar(20) check (CMND like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
     Address nvarchar(max) null,
-    Role nvarchar(50),
+    Role nvarchar(50) check (Role in (N'Trưởng Đoàn', N'Nhân Viên')),
 	foreign key (GroupID) references GroupBusiness(GroupID)
 )
 
@@ -89,6 +74,7 @@ create table BookingDetail (
     BookingID int,
     CustomerID int,
     RoomID int,
+	GroupID nvarchar(5),
     StartDate datetime,
     EndDate datetime,
     Price money,
@@ -96,7 +82,8 @@ create table BookingDetail (
     CompensationFee money default 0, -- khoản bồi thường
 	foreign key (BookingID) references Booking(BookingID),
     foreign key (CustomerID) references Customer(CustomerID),
-    foreign key (RoomID) references Room(RoomID)
+    foreign key (RoomID) references Room(RoomID),
+	foreign key (GroupID) references GroupBusiness(GroupID)
 )
 
 -- compensation table (bảng bồi thường)
@@ -475,8 +462,6 @@ go
 
 -- a. Đăng ký
 
-create trigger TongTienPhongTrongNhieuNgay
-
 create procedure DangKyGiaoDich @MaDoan nvarchar(5), @TenDaiDien nvarchar(50), @CMNDDaiDien nvarchar(15), @songuoi int, @start datetime, @end datetime, @danhsachten nvarchar(max), @danhsachcmnd nvarchar(max), @daili nvarchar(50), @phong nvarchar(max)
 as
 begin
@@ -499,14 +484,16 @@ begin
 	declare @sophong table (ID int identity, RoomID int)
 	insert into @sophong (RoomID) select cast(value as int) from string_split(@phong, ',')
 	declare @priceroom int = 0
-	select @priceroom = sum(dbo.Room.Price) from dbo.Room where RoomID in (select R.RoomID from @sophong R)
+	select @priceroom = sum(dbo.Room.Price) * (case when datediff(day, @start, @end) = 0 then 1 else datediff(day, @start, @end) end) from dbo.Room where RoomID in (select R.RoomID from @sophong R)
 	declare @numberroom int
 	select @numberroom = count(R.RoomID) from @sophong R
 	insert into dbo.Booking(GroupID, CustomerID, AgencyID, NamePerson, StartDate, EndDate, PriceTotal, NumberRoom) values 
 		(@MaDoan, (select top 1 dbo.Customer.CustomerID from dbo.Customer where dbo.Customer.Name = @TenDaiDien), (select top 1 dbo.Agency.AgencyID from dbo.Agency where dbo.Agency.Name = @daili), @TenDaiDien, @start, @end, @priceroom, @numberroom)
-	insert into dbo.BookingDetail(BookingID, CustomerID, RoomID, StartDate, EndDate, Price, SubTotal, CompensationFee) values 
+	insert into dbo.BookingDetail(BookingID, CustomerID, RoomID, StartDate, EndDate, Price, SubTotal, CompensationFee) select @
 end
 
 select * from dbo.Booking
+go
 
 exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'0123456789',4, '2024-06-15 10:00:00', '2024-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'0123456789,0123456789,0123456789', N'HolyBirdResort', N'101,102, 103'
+go

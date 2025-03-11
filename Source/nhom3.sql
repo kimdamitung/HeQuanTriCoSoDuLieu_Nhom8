@@ -48,8 +48,8 @@ create table GroupBusiness(
 create table Agency (
     AgencyID int primary key identity,
     Name nvarchar(100),
-    Phone nvarchar(15) check (Phone like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
-    Email nvarchar(100),
+    Phone nvarchar(15) check (Phone is null or Phone like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+    Email nvarchar(100) null,
     Address nvarchar(max)
 )
 
@@ -58,10 +58,10 @@ create table Customer (
     CustomerID int primary key identity,
 	GroupID nvarchar(5),
     Name nvarchar(100),
-    Phone nvarchar(15) check (Phone like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
-    Email nvarchar(100),
-    CMND nvarchar(20),
-    Address nvarchar(max),
+    Phone nvarchar(15) check (Phone is null or Phone like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+    Email nvarchar(100) null,
+    CMND nvarchar(20) check (CMND like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
+    Address nvarchar(max) null,
     Role nvarchar(50),
 	foreign key (GroupID) references GroupBusiness(GroupID)
 )
@@ -73,7 +73,7 @@ create table Booking (
     CustomerID int,
     AgencyID int,
     NamePerson nvarchar(100),
-    Deposit money,
+    Deposit money null,
     StartDate datetime,
     EndDate datetime,
     PriceTotal money,
@@ -470,3 +470,43 @@ go
 
 select * from dbo.Agency
 go
+
+-- Các quy trình chính
+
+-- a. Đăng ký
+
+create trigger TongTienPhongTrongNhieuNgay
+
+create procedure DangKyGiaoDich @MaDoan nvarchar(5), @TenDaiDien nvarchar(50), @CMNDDaiDien nvarchar(15), @songuoi int, @start datetime, @end datetime, @danhsachten nvarchar(max), @danhsachcmnd nvarchar(max), @daili nvarchar(50), @phong nvarchar(max)
+as
+begin
+	if @start > @end
+	begin
+		raiserror('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.', 16, 1)
+		rollback
+	end
+	declare @listname table (ID int identity, Name nvarchar(50))
+	insert into @listname (Name) select value from string_split(@danhsachten, ',')
+	declare @listcmnd table (ID int identity, CMND nvarchar(50))
+	insert into @listcmnd (CMND) select value from string_split(@danhsachcmnd, ',')
+	if (select count(*) from @listname) <> (select count(*) from @listcmnd) or ((select count(*) from @listname) + 1) <> @songuoi or ((select count(*) from @listcmnd) + 1) <> @songuoi
+	begin
+		raiserror('Danh sách tên hoặc CMND không khớp với số người.', 16, 1)
+        rollback
+	end
+	insert into dbo.Customer(GroupID, Name, CMND, Role) values (@MaDoan, @TenDaiDien, @CMNDDaiDien, N'Trưởng Đoàn')
+	insert into dbo.Customer(GroupID, Name, CMND, Role) select @MaDoan, N.Name, C.CMND, N'Nhân Viên' from @listname N join @listcmnd C on N.ID = C.ID
+	declare @sophong table (ID int identity, RoomID int)
+	insert into @sophong (RoomID) select cast(value as int) from string_split(@phong, ',')
+	declare @priceroom int = 0
+	select @priceroom = sum(dbo.Room.Price) from dbo.Room where RoomID in (select R.RoomID from @sophong R)
+	declare @numberroom int
+	select @numberroom = count(R.RoomID) from @sophong R
+	insert into dbo.Booking(GroupID, CustomerID, AgencyID, NamePerson, StartDate, EndDate, PriceTotal, NumberRoom) values 
+		(@MaDoan, (select top 1 dbo.Customer.CustomerID from dbo.Customer where dbo.Customer.Name = @TenDaiDien), (select top 1 dbo.Agency.AgencyID from dbo.Agency where dbo.Agency.Name = @daili), @TenDaiDien, @start, @end, @priceroom, @numberroom)
+	insert into dbo.BookingDetail(BookingID, CustomerID, RoomID, StartDate, EndDate, Price, SubTotal, CompensationFee) values 
+end
+
+select * from dbo.Booking
+
+exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'0123456789',4, '2024-06-15 10:00:00', '2024-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'0123456789,0123456789,0123456789', N'HolyBirdResort', N'101,102, 103'

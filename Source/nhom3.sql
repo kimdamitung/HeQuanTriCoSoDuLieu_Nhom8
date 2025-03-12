@@ -117,7 +117,6 @@ create table Card (
     RoomID int,
 	CustomerID int,
 	BookingDetailID int,
-	Status nvarchar(20) check (Status in (N'Có hiệu lực', N'Không hiệu lực'))
     foreign key (RoomID) references Room(RoomID),
     foreign key (CustomerID) references Customer(CustomerID),
 	foreign key (BookingDetailID) references BookingDetail(BookingDetailID),
@@ -505,7 +504,7 @@ as
 begin
 	if exists (select * from dbo.BookingDetail)
 	begin
-		insert into dbo.Card(RoomID, CustomerID, BookingDetailID)
+		insert into dbo.Card(RoomID, CustomerID, BookingDetailID) select inserted.RoomID, inserted.CustomerID, inserted.BookingDetailID from inserted
 	end
 end
 go
@@ -569,10 +568,22 @@ begin
 end
 go
 
-select * from dbo.Room
+select * from dbo.Customer
 go
 
-exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'8629501437',4, '2024-06-15 10:00:00', '2024-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1864230975,8937526140,6840931527', N'HolyBirdResort', N'101,102,103'
+select * from dbo.Booking
+go
+
+select * from dbo.BookingDetail
+go
+
+select * from dbo.Account
+go
+
+select * from dbo.Card
+go
+
+exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'2045637819',4, '2025-03-11 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'9530187426,4730261958,5867012349', N'HolyBirdResort', N'105,106,108'
 go
 
 --b. Đặt chỗ
@@ -580,7 +591,6 @@ go
 create procedure TimPhongTheoYeuCau @yeucau nvarchar(100)
 as
 begin
-	--declare @yeucau nvarchar(200) = N'Phòng hạng sang, tầng 1, 2 người/phòng, 3 phòng, từ 1/5/2010, đến 4/5/2010'
 	declare @tien money, @tongtien money
 	declare @suggest table (ID int identity, Info nvarchar(50), InfoDetail nvarchar(50))
 	insert into @suggest (Info) select ltrim(rtrim(value)) from string_split(@yeucau, ',')
@@ -608,3 +618,18 @@ go
 
 exec dbo.TimPhongTheoYeuCau N'Phòng hạng vừa, tầng 1, 3 người/phòng, 4 phòng, từ 1/5/2010, đến 13/5/2010'
 go
+
+select * from dbo.Card
+go
+
+create function KiemTraTheCoHieuLucKhong (@thephongID int) returns nvarchar(20)
+as
+begin
+	declare @trangthaihieuluc nvarchar(20)
+	select @trangthaihieuluc = (case when getdate() between dbo.BookingDetail.StartDate and dbo.BookingDetail.EndDate then N'Có hiệu lực' else N'Không hiệu lực' end) from dbo.Card
+	join dbo.BookingDetail on dbo.Card.BookingDetailID = dbo.BookingDetail.BookingDetailID
+	return @trangthaihieuluc
+end
+go
+
+select dbo.KiemTraTheCoHieuLucKhong(2)

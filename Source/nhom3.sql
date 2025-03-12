@@ -23,7 +23,7 @@ create table Room (
     SingleBed int,
     CoupleBed int,
     NumberPerson int,
-	Status nvarchar(50) check (Status in (N'Trống', N'Đã đặt', N'Đang thanh toán'))
+	Status nvarchar(50) check (Status in (N'Trống', N'Đã đặt', N'Đang thanh toán', N'Đang sử dụng'))
 )
 
 -- group table

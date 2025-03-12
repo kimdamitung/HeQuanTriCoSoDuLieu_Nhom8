@@ -116,8 +116,11 @@ create table Card (
     CardID int primary key identity,
     RoomID int,
 	CustomerID int,
+	BookingDetailID int,
+	Status nvarchar(20) check (Status in (N'Có hiệu lực', N'Không hiệu lực'))
     foreign key (RoomID) references Room(RoomID),
-    foreign key (CustomerID) references Customer(CustomerID)
+    foreign key (CustomerID) references Customer(CustomerID),
+	foreign key (BookingDetailID) references BookingDetail(BookingDetailID),
 )
 
 -- payment table
@@ -493,6 +496,16 @@ begin
 		begin
 			update dbo.Room set Status = N'Đã đặt' from dbo.Room join inserted on dbo.Room.RoomID = inserted.RoomID
 		end
+	end
+end
+go
+
+create trigger TaoThePhong on dbo.BookingDetail for insert 
+as
+begin
+	if exists (select * from dbo.BookingDetail)
+	begin
+		insert into dbo.Card(RoomID, CustomerID, BookingDetailID)
 	end
 end
 go

@@ -162,21 +162,21 @@ go
 -- status gồm: trống, đã đặt, đang thanh toán
 insert into dbo.Room(RoomID, Type, Floor, Price, SingleBed, CoupleBed, NumberPerson, Status) values
 	--tầng 1
-	(101, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(101, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(102, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(103, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(103, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(104, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(105, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(105, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(106, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(107, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(107, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(108, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(109, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(109, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(110, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(111, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(111, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(112, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(113, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(113, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(114, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
-	(115, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
+	(115, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 3, N'Trống'),
 	(116, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
 	(117, N'Phòng Hạng Vừa', 1, 500000, 2, 0, 2, N'Trống'),
 	(118, N'Phòng Hạng Sang', 1, 1000000, 0, 1, 4, N'Trống'),
@@ -204,17 +204,17 @@ insert into dbo.Room(RoomID, Type, Floor, Price, SingleBed, CoupleBed, NumberPer
 	(219, N'Phòng Hạng Vừa', 2, 500000, 2, 0, 2, N'Trống'),
 	(220, N'Phòng Hạng Sang', 2, 1000000, 0, 1, 4, N'Trống'),
     --tầng 3
-    (301, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
+    (301, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 3, N'Trống'),
 	(302, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
-	(303, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
+	(303, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 3, N'Trống'),
 	(304, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
-	(305, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
+	(305, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 3, N'Trống'),
 	(306, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
-	(307, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
+	(307, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 3, N'Trống'),
 	(308, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
-	(309, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
+	(309, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 3, N'Trống'),
 	(310, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
-	(311, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
+	(311, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 3, N'Trống'),
 	(312, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
 	(313, N'Phòng Hạng Vừa', 3, 500000, 2, 0, 2, N'Trống'),
 	(314, N'Phòng Hạng Sang', 3, 1000000, 0, 1, 4, N'Trống'),
@@ -556,7 +556,7 @@ begin
 end
 go
 
-select * from dbo.BookingDetail
+select * from dbo.Room
 go
 
 exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'8629501437',4, '2024-06-15 10:00:00', '2024-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1864230975,8937526140,6840931527', N'HolyBirdResort', N'101,102,103'
@@ -567,7 +567,8 @@ go
 create procedure TimPhongTheoYeuCau @yeucau nvarchar(100)
 as
 begin
-	declare @yeucau nvarchar(200) = N'Phòng hạng sang, tầng 1, 2 người/phòng, 3 phòng, từ 1/5/2010, đến 4/5/2010'
+	--declare @yeucau nvarchar(200) = N'Phòng hạng sang, tầng 1, 2 người/phòng, 3 phòng, từ 1/5/2010, đến 4/5/2010'
+	declare @tien money, @tongtien money
 	declare @suggest table (ID int identity, Info nvarchar(50), InfoDetail nvarchar(50))
 	insert into @suggest (Info) select ltrim(rtrim(value)) from string_split(@yeucau, ',')
 	update @suggest set InfoDetail = 
@@ -576,12 +577,21 @@ begin
 			when Info like N'%tầng%' and patindex('%[0-9]%', Info) > 0 then stuff(Info, 1, patindex('%[0-9]%', Info) - 1, '')
 			when Info like N'%người/phòng%' and patindex('%[0-9]%', Info) > 0 then left(Info, patindex('%[^0-9]%', Info + ' ') - 1)
 			when Info like N'%phòng%' and patindex('%[0-9]%', Info) > 0 then left(Info, patindex('%[^0-9]%', Info + ' ') - 1)
-			when Info like N'%từ%' and patindex('%[0-9]%/%[0-9]%/%[0-9]%', Info) > 0 then stuff(Info, 1, charindex('từ', Info) + 2, '')
-			when Info like N'%đến%' and patindex('%[0-9]%/%[0-9]%/%[0-9]%', Info) > 0 then stuff(Info, 1, charindex('đến', Info) + 3, '')
+			when Info like N'%từ%' and patindex('%[0-9]%/%[0-9]%/%[0-9]%', Info) > 0 then convert(nvarchar(10), try_convert(date, stuff(Info, 1, charindex('từ', Info) + 2, ''), 103), 120)
+			when Info like N'%đến%' and patindex('%[0-9]%/%[0-9]%/%[0-9]%', Info) > 0 then convert(nvarchar(10), try_convert(date, stuff(Info, 1, charindex('đến', Info) + 3, ''), 103), 120)
 		end
-	declare @sotang int, @songuoi int
+	declare @sotang int, @songuoi int, @sophong int, @ngaybatdau datetime, @ngayketthuc datetime
+	select @sophong = cast(S.InfoDetail as int) from @suggest S where Info like N'%phòng%' and isnumeric(InfoDetail) = 1
 	select @sotang = cast(S.InfoDetail as int) from @suggest S where Info like N'%tầng%'
 	select @songuoi = cast(S.InfoDetail as int) from @suggest S where Info like N'%người/phòng%'
-	select dbo.Room.* from dbo.Room join @suggest S on S.Info = dbo.Room.Type
-	where dbo.Room.Floor = @sotang and dbo.Room.NumberPerson >= @songuoi and dbo.Room.Status = N'Trống'
+	select @ngaybatdau = try_cast(S.InfoDetail as datetime) from @suggest S where Info like N'%từ%'
+	select @ngayketthuc = try_cast(S.InfoDetail as datetime) from @suggest S where Info like N'%đến%'
+	select @tien = isnull(dbo.Room.Price, 0) from dbo.Room join @suggest S on s.Info = dbo.Room.Type
+	set @tongtien = @tien * @sophong * (case when datediff(day, @ngaybatdau, @ngayketthuc) = 0 then 1 else datediff(day, @ngaybatdau, @ngayketthuc) end)
+	select @tongtien as TongTienPhongTheoYeuCau
+	select dbo.Room.* from dbo.Room join @suggest S on S.Info = dbo.Room.Type where dbo.Room.Floor = @sotang and dbo.Room.NumberPerson >= @songuoi and dbo.Room.Status = N'Trống'
 end
+go
+
+exec dbo.TimPhongTheoYeuCau N'Phòng hạng vừa, tầng 1, 3 người/phòng, 4 phòng, từ 1/5/2010, đến 13/5/2010'
+go

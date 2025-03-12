@@ -568,10 +568,9 @@ create procedure TimPhongTheoYeuCau @yeucau nvarchar(100)
 as
 begin
 	declare @yeucau nvarchar(200) = N'Phòng hạng sang, tầng 1, 2 người/phòng, 3 phòng, từ 1/5/2010, đến 4/5/2010'
-	declare @suggest table (ID int identity, Info nvarchar(50))
-	insert into @suggest (Info) 
-	select ltrim(rtrim(value)) from string_split(@yeucau, ',')
-	select Info, 
+	declare @suggest table (ID int identity, Info nvarchar(50), InfoDetail nvarchar(50))
+	insert into @suggest (Info) select ltrim(rtrim(value)) from string_split(@yeucau, ',')
+	update @suggest set InfoDetail = 
 		case
 			when Info like N'Phòng%' then Info
 			when Info like N'%tầng%' and patindex('%[0-9]%', Info) > 0 then stuff(Info, 1, patindex('%[0-9]%', Info) - 1, '')
@@ -579,7 +578,10 @@ begin
 			when Info like N'%phòng%' and patindex('%[0-9]%', Info) > 0 then left(Info, patindex('%[^0-9]%', Info + ' ') - 1)
 			when Info like N'%từ%' and patindex('%[0-9]%/%[0-9]%/%[0-9]%', Info) > 0 then stuff(Info, 1, charindex('từ', Info) + 2, '')
 			when Info like N'%đến%' and patindex('%[0-9]%/%[0-9]%/%[0-9]%', Info) > 0 then stuff(Info, 1, charindex('đến', Info) + 3, '')
-		end as InfoDetail
-	from @suggest
-	select * from dbo.Room join @suggest S on S.Info = dbo.Room.Type
+		end
+	declare @sotang int, @songuoi int
+	select @sotang = cast(S.InfoDetail as int) from @suggest S where Info like N'%tầng%'
+	select @songuoi = cast(S.InfoDetail as int) from @suggest S where Info like N'%người/phòng%'
+	select dbo.Room.* from dbo.Room join @suggest S on S.Info = dbo.Room.Type
+	where dbo.Room.Floor = @sotang and dbo.Room.NumberPerson >= @songuoi and dbo.Room.Status = N'Trống'
 end

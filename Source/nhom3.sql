@@ -142,21 +142,6 @@ create table Payment (
 	foreign key (AccountID) references Account(AccountID)
 )
 
--- paymentdetail table
-create table PaymentDetail (
-    PaymentDetailID int primary key identity,
-	CompensationID int null,
-    PaymentID int,
-    RoomID int,
-    StateDevices nvarchar(100) null,
-    PriceRoom money,
-	CompensationFee money,
-    SubTotal money,
-    foreign key (PaymentID) references Payment(PaymentID),
-    foreign key (RoomID) references Room(RoomID),
-	foreign key (CompensationID) references Compensation(CompensationID)
-)
-
 -- dữ liệu Nhân viên khách sạn
 insert into dbo.Employee(Name, Role) values
 	(N'Nguyễn Khắc Sơn', N'Quản Lí'),
@@ -821,17 +806,37 @@ go
 create procedure TraPhong @MaGD int
 as
 begin
-	declare @boithuong money
-	select @boithuong = dbo.Compensation.Amount from dbo.Compensation where dbo.Compensation.BookingID = @MaGD
-	select @boithuong
+	declare @boithuong money, @roomboithuong int
+	select @boithuong = dbo.Compensation.Amount, @roomboithuong = dbo.Compensation.RoomID from dbo.Compensation where dbo.Compensation.BookingID = @MaGD
 	insert into dbo.Payment(CustomerID, BookingID, AccountID, Price, PaymentDate, Status) select 
 		dbo.Customer.CustomerID, dbo.Booking.BookingID, dbo.Account.AccountID, dbo.Booking.PriceTotal + @boithuong, getdate(), N'Thanh toán thành công' from dbo.Booking 
 	join dbo.Customer on dbo.Booking.CustomerID = dbo.Customer.CustomerID
 	join dbo.Account on dbo.Account.GroupID = dbo.Customer.GroupID where dbo.Booking.BookingID = @MaGD
+	declare @numberroom int
+	select @numberroom = count(*) from dbo.BookingDetail where dbo.BookingDetail.RoomID = @roomboithuong
+	if @numberroom = 1
+	begin
+		update dbo.BookingDetail set CompensationFee = @boithuong where dbo.BookingDetail.RoomID = @roomboithuong
+	end
+	else if @numberroom > 1
+	begin
+		declare @tienshare money
+		set @tienshare = @boithuong / @numberroom
+		update dbo.BookingDetail set CompensationFee = @tienshare where dbo.BookingDetail.RoomID = @roomboithuong
+	end
+	--select distinct dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = 1 
+	update dbo.Room set Status = N'Trống' where dbo.Room.RoomID in (select distinct dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = @MaGD and dbo.Room.Status = N'Đã đặt')
 end
+go
 
 exec dbo.TraPhong 1
 go
 
 select * from dbo.Payment
+go
+
+select * from dbo.BookingDetail
+go
+
+select * from dbo.Room
 go

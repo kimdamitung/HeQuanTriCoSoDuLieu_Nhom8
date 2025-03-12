@@ -624,7 +624,7 @@ go
 exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'2045637819',4, '2025-03-11 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'9530187426,4730261958,5867012349', N'HolyBirdResort', N'105,106,108'
 go
 
-exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'7281956340',4, '2025-03-14 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1390827456,9206851734,4962105783', N'HolyBirdResort 2', N'205,306,408'
+exec dbo.DangKyGiaoDich 'B002', N'Nguyễn Duy Tùng', N'7281956340',4, '2025-03-14 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1390827456,9206851734,4962105783', N'HolyBirdResort 2', N'205,306,408'
 go
 
 select * from dbo.Customer
@@ -689,7 +689,58 @@ end
 go
 
 select dbo.KiemTraTheCoHieuLucKhong(2)
+go
 
 -- c. Hủy đăng ký
 
-create procedure HuyChiTietDangKyGiaoDich
+create function XemChiTietGiaoDichTheoMadoan(@MaDoan nvarchar(10)) returns table
+as
+return (
+	select 
+		dbo.BookingDetail.BookingDetailID,
+		dbo.BookingDetail.BookingID,
+		dbo.BookingDetail.CustomerID,
+		dbo.BookingDetail.GroupID,
+		dbo.BookingDetail.Name,
+		dbo.BookingDetail.StartDate,
+		dbo.BookingDetail.EndDate,
+		dbo.BookingDetail.Price,
+		dbo.BookingDetail.SubTotal,
+		dbo.BookingDetail.CompensationFee
+	from dbo.BookingDetail join dbo.Customer on dbo.BookingDetail.CustomerID = dbo.Customer.CustomerID 
+	where dbo.BookingDetail.GroupID = @MaDoan
+)
+go
+
+create trigger XoaGiaoDich on dbo.BookingDetail for delete
+as
+begin
+	if exists (select * from dbo.BookingDetail)
+	begin
+		declare @detailid int, @bookid int, @counter int
+		select @detailid = deleted.BookingDetailID, @bookid = deleted.BookingID from deleted
+		select @counter = count(*) from dbo.BookingDetail where dbo.BookingDetail.BookingID = @bookid and dbo.BookingDetail.BookingDetailID <> @detailid
+		if @counter = 0
+		begin
+			delete from dbo.Booking where dbo.Booking.BookingID = @bookid
+		end
+	end
+end
+go
+
+create procedure HuyChiTietDangKyGiaoDich @ID int
+as
+begin
+	delete from dbo.Card where dbo.Card.BookingDetailID = @ID
+	delete from dbo.BookingDetail where dbo.BookingDetail.BookingDetailID = @ID
+end
+go
+
+exec dbo.HuyChiTietDangKyGiaoDich 1
+go
+
+select * from XemChiTietGiaoDichTheoMadoan(N'A001')
+go
+
+select * from dbo.Booking
+go

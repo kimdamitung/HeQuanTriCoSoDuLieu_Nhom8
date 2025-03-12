@@ -1,4 +1,7 @@
-﻿create database HolyBirdResort
+﻿use master
+go
+
+create database HolyBirdResort
 go
 
 use HolyBirdResort
@@ -503,6 +506,16 @@ begin
 		rollback transaction
 		return
 	end
+	declare @sophong table (ID int identity, RoomID int)
+	insert into @sophong (RoomID) select cast(value as int) from string_split(@phong, ',')
+	if exists (
+		select 1 from @sophong R where dbo.KiemTraTrangThaiPhong(R.RoomID) = 1
+	)
+	begin
+		raiserror('Có phòng đã được đặt, không thể tiếp tục.', 16, 1)
+		rollback transaction
+		return
+	end
 	declare @listname table (ID int identity, Name nvarchar(50))
 	insert into @listname (Name) select value from string_split(@danhsachten, ',')
 	declare @listcmnd table (ID int identity, CMND nvarchar(50))
@@ -516,36 +529,36 @@ begin
 	insert into dbo.Customer(GroupID, Name, CMND, Role) values (@MaDoan, @TenDaiDien, @CMNDDaiDien, N'Trưởng Đoàn')
 	insert into dbo.Customer(GroupID, Name, CMND, Role) select @MaDoan, N.Name, C.CMND, N'Nhân Viên' from @listname N join @listcmnd C on N.ID = C.ID
 	insert into dbo.Account(GroupID, Username, Password) values (@MaDoan, @CMNDDaiDien, @CMNDDaiDien)
-	declare @sophong table (ID int identity, RoomID int)
-	insert into @sophong (RoomID) select cast(value as int) from string_split(@phong, ',')
-	if exists (
-		select 1 from @sophong R where dbo.KiemTraTrangThaiPhong(R.RoomID) = 1
-	)
-	begin
-		raiserror('Có phòng đã được đặt, không thể tiếp tục.', 16, 1)
-		rollback transaction
-		return
-	end
 	declare @priceroom int = 0
-	select @priceroom = sum(dbo.Room.Price) * (case when datediff(day, @start, @end) = 0 then 1 else datediff(day, @start, @end) end) from dbo.Room where RoomID in (select R.RoomID from @sophong R)
+	select @priceroom = sum(dbo.Room.Price) from @sophong R 
+	join dbo.Room on dbo.Room.RoomID = R.RoomID
 	declare @numberroom int
 	select @numberroom = count(R.RoomID) from @sophong R
 	insert into dbo.Booking(GroupID, CustomerID, AgencyID, NamePerson, StartDate, EndDate, PriceTotal, NumberRoom) values 
-		(@MaDoan, (select top 1 dbo.Customer.CustomerID from dbo.Customer where dbo.Customer.Name = @TenDaiDien), (select top 1 dbo.Agency.AgencyID from dbo.Agency where dbo.Agency.Name = @daili), @TenDaiDien, @start, @end, @priceroom, @numberroom)
+		(@MaDoan, (select top 1 dbo.Customer.CustomerID from dbo.Customer where dbo.Customer.Name = @TenDaiDien), (select top 1 dbo.Agency.AgencyID from dbo.Agency where dbo.Agency.Name = @daili), @TenDaiDien, @start, @end, (@priceroom * (case when datediff(day, @start, @end) = 0 then 1 else datediff(day, @start, @end) end)), @numberroom)
 	declare @danhsachCustomer table (ID int identity, CustomerID int)
 	insert into @danhsachCustomer (CustomerID) select dbo.Customer.CustomerID from dbo.Customer where GroupID = @MaDoan
 	declare @sophongdat int
 	select @sophongdat = count(*) from @sophong
-	insert into dbo.BookingDetail(GroupID, BookingID, CustomerID, RoomID, Name, StartDate, EndDate, Price, SubTotal, CompensationFee) select 
-		@MaDoan, (select top 1 dbo.Booking.BookingID from dbo.Booking where dbo.Booking.NamePerson = @TenDaiDien), D.CustomerID, R.RoomID, (select dbo.Customer.Name from dbo.Customer where dbo.Customer.CustomerID = D.CustomerID), @start, @end, 0, 0, 0
+	insert into dbo.BookingDetail(GroupID, BookingID, CustomerID, RoomID, Name, StartDate, EndDate, Price, SubTotal) select 
+		@MaDoan, (select top 1 dbo.Booking.BookingID from dbo.Booking where dbo.Booking.NamePerson = @TenDaiDien), D.CustomerID, R.RoomID, (select dbo.Customer.Name from dbo.Customer where dbo.Customer.CustomerID = D.CustomerID), @start, @end, 0, 0
 		from @danhsachCustomer D 
 		join @sophong R on (D.ID - 1) % (select count(*) from @sophong) + 1 = R.ID
+	update B set 
+		B.Price = (dbo.Room.Price / P.CountCustomer), 
+		B.SubTotal = (dbo.Room.Price / P.CountCustomer) * (case when datediff(day, B.StartDate, B.EndDate) = 0 then 1 else datediff(day, B.StartDate, B.EndDate) end)
+	from dbo.BookingDetail B
+	join dbo.Room on dbo.Room.RoomID = B.RoomID
+	join (
+		select dbo.BookingDetail.RoomID, count(dbo.BookingDetail.CustomerID) as CountCustomer from dbo.BookingDetail group by dbo.BookingDetail.RoomID
+	) P on B.RoomID = P.RoomID
+	join @sophong R on  R.RoomID = dbo.Room.RoomID
 end
 go
 
 --create procedure ChiTietGiaoDich 
 
-select * from dbo.Room
+select * from dbo.BookingDetail
 go
 
 exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'8629501437',4, '2024-06-15 10:00:00', '2024-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1864230975,8937526140,6840931527', N'HolyBirdResort', N'101,102,103'

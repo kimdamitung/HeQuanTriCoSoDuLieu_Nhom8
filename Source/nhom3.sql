@@ -96,13 +96,15 @@ create table BookingDetail (
 -- compensation table (bảng bồi thường)
 create table Compensation (
     CompensationID int primary key identity,
-    BookingDetailID int,
+	RoomID int,
     EmployeeID int,
-    Description nvarchar(max),
+	BookingID int,
+    Description nvarchar(max) null,
     Amount money,
     CheckDate datetime,
-    foreign key (BookingDetailID) references BookingDetail(BookingDetailID),
-    foreign key (EmployeeID) references Employee(EmployeeID)
+    foreign key (EmployeeID) references Employee(EmployeeID),
+	foreign key (RoomID) references Room(RoomID),
+	foreign key (BookingID) references Booking(BookingID)
 )
 
 -- account table
@@ -111,6 +113,7 @@ create table Account (
     GroupID nvarchar(5),
     Username nvarchar(50) unique,
     Password nvarchar(255),
+	Status nvarchar(50) check (Status in (N'Giao dịch', N'Nhận phòng'))
     foreign key (GroupID) references GroupBusiness(GroupID)
 )
 
@@ -133,7 +136,7 @@ create table Payment (
 	AccountID int,
     Price money,
     PaymentDate datetime,
-    Status nvarchar(50),
+    Status nvarchar(50) check (Status in (N'Chờ thanh toán', N'Thanh toán thành công')),
 	foreign key (CustomerID) references Customer(CustomerID),
     foreign key (BookingID) references Booking(BookingID),
 	foreign key (AccountID) references Account(AccountID)
@@ -142,13 +145,16 @@ create table Payment (
 -- paymentdetail table
 create table PaymentDetail (
     PaymentDetailID int primary key identity,
+	CompensationID int null,
     PaymentID int,
     RoomID int,
-    StateDevices nvarchar(100),
+    StateDevices nvarchar(100) null,
     PriceRoom money,
+	CompensationFee money,
     SubTotal money,
     foreign key (PaymentID) references Payment(PaymentID),
-    foreign key (RoomID) references Room(RoomID)
+    foreign key (RoomID) references Room(RoomID),
+	foreign key (CompensationID) references Compensation(CompensationID)
 )
 
 -- dữ liệu Nhân viên khách sạn
@@ -511,6 +517,7 @@ begin
 	end
 end
 go
+
 create procedure DangKyGiaoDich @MaDoan nvarchar(5), @TenDaiDien nvarchar(50), @CMNDDaiDien nvarchar(15), @songuoi int, @start datetime, @end datetime, @danhsachten nvarchar(max), @danhsachcmnd nvarchar(max), @daili nvarchar(50), @phong nvarchar(max)
 as
 begin
@@ -559,7 +566,7 @@ begin
 
     if not exists (select 1 from dbo.Account where Username = @CMNDDaiDien)
     begin
-        insert into dbo.Account(GroupID, Username, Password) values (@MaDoan, @CMNDDaiDien, @CMNDDaiDien)
+        insert into dbo.Account(GroupID, Username, Password, Status) values (@MaDoan, @CMNDDaiDien, @CMNDDaiDien, N'Giao dịch')
     end
 
     declare @priceroom int = 0
@@ -742,5 +749,89 @@ go
 select * from XemChiTietGiaoDichTheoMadoan(N'A001')
 go
 
+select * from dbo.BookingDetail
+go
+
+-- d. Thuê phòng
+
+create procedure HuyGiaoDich @BookID int
+as
+begin
+	declare @number int
+	declare @giaodich table (ID int identity, BookingDetailID int, CardID int)
+	insert into @giaodich (BookingDetailID, CardID) select dbo.BookingDetail.BookingDetailID, dbo.Card.CardID from dbo.BookingDetail join dbo.Card on dbo.BookingDetail.BookingDetailID = dbo.Card.BookingDetailID where dbo.BookingDetail.BookingID = @BookID
+	delete from dbo.Card where dbo.Card.CardID in (select CardID from @giaodich)
+	delete from dbo.BookingDetail where dbo.BookingDetail.BookingDetailID in (select BookingDetailID from @giaodich)
+	delete from dbo.Booking where dbo.Booking.BookingID = @BookID
+end
+go
+
+exec dbo.HuyGiaoDich 1
+go
+
+select * from dbo.Card
+go
+
+select * from dbo.BookingDetail
+go
+
 select * from dbo.Booking
+go
+
+-- e.Nhận phòng
+
+create procedure KichHoatTaiKhoan @ID nvarchar(20)
+as
+begin
+	update dbo.Account set Status = N'Nhận phòng' where dbo.Account.GroupID = @ID
+end
+go
+
+exec dbo.KichHoatTaiKhoan N'A001'
+go
+
+select * from dbo.Account
+go
+
+-- f. Trả phòng
+
+create procedure ThemBoiThuongChoResort @namenhanvien nvarchar(50), @roomid int, @magd int, @tienboithuong money
+as
+begin
+	declare @IDNV int, @tongtien money
+	select @IDNV = dbo.Employee.EmployeeID from dbo.Employee where dbo.Employee.Name = @namenhanvien
+	insert into dbo.Compensation(RoomID, EmployeeID, BookingID, Amount, CheckDate) select 
+		dbo.Room.RoomID, @IDNV, @magd,@tienboithuong, getdate()
+	from dbo.Room where dbo.Room.RoomID = @roomid
+end
+go
+
+select * from dbo.Booking
+go
+
+exec dbo.ThemBoiThuongChoResort N'Nguyễn Duy Tùng', 105, 1,1000100
+go
+
+select * from dbo.Compensation
+go
+
+select * from dbo.BookingDetail
+go
+
+create procedure TraPhong @MaGD int
+as
+begin
+	declare @boithuong money
+	select @boithuong = dbo.Compensation.Amount from dbo.Compensation where dbo.Compensation.BookingID = @MaGD
+	select @boithuong
+	insert into dbo.Payment(CustomerID, BookingID, AccountID, Price, PaymentDate, Status) select 
+		dbo.Customer.CustomerID, dbo.Booking.BookingID, dbo.Account.AccountID, dbo.Booking.PriceTotal + @boithuong, getdate(), N'Thanh toán thành công' from dbo.Booking 
+	join dbo.Customer on dbo.Booking.CustomerID = dbo.Customer.CustomerID
+	join dbo.Account on dbo.Account.GroupID = dbo.Customer.GroupID where dbo.Booking.BookingID = @MaGD
+end
+
+exec dbo.TraPhong 1
+go
+
+select * from dbo.Payment
 go

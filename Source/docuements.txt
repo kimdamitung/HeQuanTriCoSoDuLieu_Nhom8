@@ -1,0 +1,35 @@
+1: Procedure
+
+    DangKyGiaoDich
+
+    TimPhongTheoYeuCau
+
+    HuyChiTietDangKyGiaoDich
+
+    HuyGiaoDich
+
+    KichHoatTaiKhoan
+
+    ThemBoiThuongChoResort
+
+    TraPhong
+
+2: Function
+
+    KiemTraTrangThaiToanBoPhong     ()              table
+
+    KiemTraTrangThaiPhong           (MaPhong)       nvarchar
+
+    KiemTraTheCoHieuLucKhong        (ThePhongID)    nvarchar
+
+    XemChiTietGiaoDichTheoMaDoan    (MaDoan)        table
+
+
+
+3: Trigger
+
+    DoiTrangThaiPhong   dbo.BoookingDetail  insert
+
+    TaoThePhong         dbo.BoookingDetail  insert
+
+    XoaGiaoDich         dbo.BoookingDetail  delete

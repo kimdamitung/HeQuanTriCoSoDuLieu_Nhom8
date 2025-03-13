@@ -8,11 +8,15 @@
 
     HuyGiaoDich
 
+    DangKyGiaoDichTaiCho
+
     KichHoatTaiKhoan
 
     ThemBoiThuongChoResort
 
     TraPhong
+
+    NhanPhong
 
 2: Function
 

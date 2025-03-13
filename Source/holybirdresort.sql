@@ -515,8 +515,8 @@ begin
     insert into @sophong (RoomID) select cast(value as int) from string_split(@phong, ',')
 
     if exists (
-        select 1 from @sophong R where dbo.KiemTraTrangThaiPhong(R.RoomID) = 1
-    )
+		select 1 from @sophong R where dbo.KiemTraTrangThaiPhong(R.RoomID) <> N'Trống'
+	)
     begin
         raiserror('Có phòng đã được đặt, không thể tiếp tục.', 16, 1)
         rollback transaction
@@ -612,7 +612,7 @@ go
 exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'2045637819',4, '2025-03-11 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'9530187426,4730261958,5867012349', N'HolyBirdResort', N'105,106,108'
 go
 
-exec dbo.DangKyGiaoDich 'B002', N'Nguyễn Duy Tùng', N'7281956340',4, '2025-03-14 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1390827456,9206851734,4962105783', N'HolyBirdResort 2', N'205,306,408'
+exec dbo.DangKyGiaoDich 'B002', N'Nguyễn Duy Tùng', N'7281956340',4, '2025-03-14 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1390827456,4765810392,5306271948', N'HolyBirdResort 2', N'505,306,408'
 go
 
 select * from dbo.Customer
@@ -628,6 +628,9 @@ select * from dbo.Account
 go
 
 select * from dbo.Card
+go
+
+select * from dbo.Room
 go
 
 --b. Đặt chỗ
@@ -703,7 +706,6 @@ go
 create trigger XoaGiaoDich on dbo.BookingDetail for delete
 as
 begin
-	if exists (select * from dbo.BookingDetail)
 	begin
 		declare @detailid int, @bookid int, @counter int
 		select @detailid = deleted.BookingDetailID, @bookid = deleted.BookingID from deleted
@@ -716,24 +718,163 @@ begin
 end
 go
 
-create procedure HuyChiTietDangKyGiaoDich @ID int
+create procedure HuyChiTietDangKyGiaoDich @MaDoan nvarchar(10), @Ten nvarchar(50)
 as
 begin
-	delete from dbo.Card where dbo.Card.BookingDetailID = @ID
-	delete from dbo.BookingDetail where dbo.BookingDetail.BookingDetailID = @ID
+	delete from dbo.Card  where dbo.Card.BookingDetailID in (select dbo.BookingDetail.BookingDetailID from dbo.BookingDetail where dbo.BookingDetail.GroupID = @MaDoan and dbo.BookingDetail.Name = @Ten)
+	delete from dbo.BookingDetail where dbo.BookingDetail.GroupID = @MaDoan and dbo.BookingDetail.Name = @Ten
 end
 go
 
-exec dbo.HuyChiTietDangKyGiaoDich 1
+exec dbo.HuyChiTietDangKyGiaoDich N'A001', N'Lê Văn C'
 go
 
 select * from XemChiTietGiaoDichTheoMadoan(N'A001')
 go
 
+select * from dbo.Card
+go
+
 select * from dbo.BookingDetail
 go
 
+select * from dbo.Booking
+go
+
 -- d. Thuê phòng
+
+create procedure DangKyGiaoDichTaiCho @MaDoan nvarchar(5), @TenDaiDien nvarchar(50), @CMNDDaiDien nvarchar(15), @songuoi int, @end datetime, @danhsachten nvarchar(max), @danhsachcmnd nvarchar(max), @phong nvarchar(max)
+as
+begin
+    begin transaction
+
+    if getdate() > @end
+    begin
+        raiserror('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.', 16, 1)
+        rollback transaction
+        return
+    end
+
+    declare @sophong table (ID int identity, RoomID int)
+    insert into @sophong (RoomID) select cast(value as int) from string_split(@phong, ',')
+
+    if exists (
+		select 1 from @sophong R where dbo.KiemTraTrangThaiPhong(R.RoomID) <> N'Trống'
+	)
+    begin
+        raiserror('Có phòng đã được đặt, không thể tiếp tục.', 16, 1)
+        rollback transaction
+        return
+    end
+
+    declare @listname table (ID int identity, Name nvarchar(50))
+    insert into @listname (Name) select value from string_split(@danhsachten, ',')
+
+    declare @listcmnd table (ID int identity, CMND nvarchar(50))
+    insert into @listcmnd (CMND) select value from string_split(@danhsachcmnd, ',')
+
+    if (select count(*) from @listname) <> (select count(*) from @listcmnd) or ((select count(*) from @listname) + 1) <> @songuoi
+    begin
+        raiserror('Danh sách tên hoặc CMND không khớp với số người.', 16, 1)
+        rollback transaction
+        return
+    end
+
+    -- Kiểm tra xem trưởng đoàn đã tồn tại hay chưa
+    if not exists (select 1 from dbo.Customer where CMND = @CMNDDaiDien)
+    begin
+        insert into dbo.Customer(GroupID, Name, CMND, Role) values (@MaDoan, @TenDaiDien, @CMNDDaiDien, N'Trưởng Đoàn')
+    end
+
+    insert into dbo.Customer(GroupID, Name, CMND, Role) select @MaDoan, N.Name, C.CMND, N'Nhân Viên' from @listname N 
+	join @listcmnd C on N.ID = C.ID where not exists (select 1 from dbo.Customer where CMND = C.CMND) --Ngăn trùng lặp
+
+    if not exists (select 1 from dbo.Account where Username = @CMNDDaiDien)
+    begin
+        insert into dbo.Account(GroupID, Username, Password, Status) values (@MaDoan, @CMNDDaiDien, @CMNDDaiDien, N'Giao dịch')
+    end
+
+    declare @priceroom int = 0
+    select @priceroom = sum(dbo.Room.Price) from @sophong R join dbo.Room on dbo.Room.RoomID = R.RoomID
+
+    declare @numberroom int
+    select @numberroom = count(*) from @sophong
+
+    --Kiểm tra xem Booking đã tồn tại chưa
+    if not exists (select 1 from dbo.Booking where GroupID = @MaDoan and NamePerson = @TenDaiDien)
+    begin
+        insert into dbo.Booking(GroupID, CustomerID, AgencyID, NamePerson, BookingDate, StartDate, EndDate, PriceTotal, NumberRoom) values 
+		(@MaDoan, (select top 1 dbo.Customer.CustomerID from dbo.Customer where dbo.Customer.Name = @TenDaiDien), (select top 1 dbo.Agency.AgencyID from dbo.Agency where dbo.Agency.Name = N'HolyBirdResort'), @TenDaiDien, getdate(), getdate(), @end, (@priceroom * (case when datediff(day, getdate(), @end) = 0 then 1 else datediff(day, getdate(), @end) end)), @numberroom)
+    end
+
+    declare @bookingID int = (select top 1 BookingID from dbo.Booking where NamePerson = @TenDaiDien order by BookingID desc)
+
+    declare @danhsachCustomer table (ID int identity, CustomerID int, Name nvarchar(100))
+    insert into @danhsachCustomer (CustomerID, Name) select dbo.Customer.CustomerID, dbo.Customer.Name from dbo.Customer where dbo.Customer.GroupID = @MaDoan
+    declare @customerCount int = (select count(*) from @danhsachCustomer)
+    if @customerCount > @numberroom
+    begin
+        declare @currentRoom int = 1
+        declare @totalRooms int = (select count(*) from @sophong)
+        declare @CustomerID int
+
+        declare customer_cursor cursor for
+        select CustomerID from @danhsachCustomer
+
+        open customer_cursor
+        fetch next from customer_cursor into @CustomerID
+
+        while @@fetch_status = 0
+        begin
+            declare @RoomID int = (select RoomID from @sophong where ID = @currentRoom)
+            -- Kiểm tra xem khách đã có trong BookingDetail chưa
+            if not exists (select 1 from dbo.BookingDetail where BookingID = @bookingID and CustomerID = @CustomerID)
+            begin
+                insert into dbo.BookingDetail(GroupID, BookingID, CustomerID, RoomID, Name, StartDate, EndDate, Price, SubTotal) values 
+				(@MaDoan, @bookingID, @CustomerID, @RoomID, (select Name from dbo.Customer where CustomerID = @CustomerID), getdate(), @end, 0, 0)
+            end
+            set @currentRoom = @currentRoom + 1
+            if @currentRoom > @totalRooms set @currentRoom = 1
+            fetch next from customer_cursor into @CustomerID
+        end
+        close customer_cursor
+        deallocate customer_cursor
+    end
+	update B set 
+		B.Price = (dbo.Room.Price / P.CountCustomer), 
+		B.SubTotal = (dbo.Room.Price / P.CountCustomer) * (case when datediff(day, B.StartDate, B.EndDate) = 0 then 1 else datediff(day, B.StartDate, B.EndDate) end)
+	from dbo.BookingDetail B
+	join dbo.Room on dbo.Room.RoomID = B.RoomID
+	join (
+		select dbo.BookingDetail.RoomID, count(dbo.BookingDetail.CustomerID) as CountCustomer from dbo.BookingDetail group by dbo.BookingDetail.RoomID
+	) P on B.RoomID = P.RoomID
+	join @sophong R on  R.RoomID = dbo.Room.RoomID
+	update dbo.Account set Status = N'Nhận phòng' where dbo.Account.GroupID = @MaDoan
+	update R set R.Status = N'Đang sử dụng' from dbo.Room R join @sophong P on R.RoomID = P.RoomID
+	update C set C.Status = N'Đã kích hoạt' from dbo.Card C join @danhsachCustomer DS on C.CustomerID = DS.CustomerID 
+    commit transaction
+end
+go
+
+exec dbo.DangKyGiaoDichTaiCho 'C003', N'Nguyễn Duy Tùng', N'8927314560',4, '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1087342659,0000000001,1000000001', N'605,806,908'
+go
+
+select * from dbo.Customer
+go
+
+select * from dbo.Booking
+go
+
+select * from dbo.BookingDetail
+go
+
+select * from dbo.Account
+go
+
+select * from dbo.Card
+go
+
+select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'C003'
 
 create procedure HuyGiaoDich @BookID int
 as
@@ -773,6 +914,14 @@ go
 
 select * from dbo.Account
 go
+
+create procedure NhanPhong @MaGiaoDich int 
+as
+begin
+	update dbo.Room set Status = N'Đang sử dụng' where dbo.Room.RoomID in (select dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = @MaGiaoDich)
+end
+go
+
 
 -- f. Trả phòng
 

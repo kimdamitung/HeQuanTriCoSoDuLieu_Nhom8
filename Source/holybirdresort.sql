@@ -545,9 +545,9 @@ begin
     insert into dbo.Customer(GroupID, Name, CMND, Role) select @MaDoan, N.Name, C.CMND, N'Nhân Viên' from @listname N 
 	join @listcmnd C on N.ID = C.ID where not exists (select 1 from dbo.Customer where CMND = C.CMND) --Ngăn trùng lặp
 
-    if not exists (select 1 from dbo.Account where Username = @CMNDDaiDien)
+    if not exists (select 1 from dbo.Account where Username = N'A' + @CMNDDaiDien)
     begin
-        insert into dbo.Account(GroupID, Username, Password, Status) values (@MaDoan, @CMNDDaiDien, @CMNDDaiDien, N'Giao dịch')
+        insert into dbo.Account(GroupID, Username, Password, Status) values (@MaDoan, N'A' + @CMNDDaiDien, @CMNDDaiDien, N'Giao dịch')
     end
 
     declare @priceroom int = 0
@@ -773,9 +773,9 @@ begin
     insert into dbo.Customer(GroupID, Name, CMND, Role) select @MaDoan, N.Name, C.CMND, N'Nhân Viên' from @listname N 
 	join @listcmnd C on N.ID = C.ID where not exists (select 1 from dbo.Customer where CMND = C.CMND) --Ngăn trùng lặp
 
-    if not exists (select 1 from dbo.Account where Username = @CMNDDaiDien)
+    if not exists (select 1 from dbo.Account where Username = N'A' + @CMNDDaiDien)
     begin
-        insert into dbo.Account(GroupID, Username, Password, Status) values (@MaDoan, @CMNDDaiDien, @CMNDDaiDien, N'Giao dịch')
+        insert into dbo.Account(GroupID, Username, Password, Status) values (@MaDoan, N'A' + @CMNDDaiDien, @CMNDDaiDien, N'Giao dịch')
     end
 
     declare @priceroom int = 0
@@ -972,4 +972,30 @@ select * from dbo.BookingDetail
 go
 
 select * from dbo.Room
+go
+
+-- Phân quyền cho database
+
+use master
+go
+
+create login admin with password = 'admin'
+go
+
+use HolyBirdResort
+go
+
+create user admin for login admin
+go
+
+exec sp_addrolemember 'db_owner', 'admin'
+go
+
+create user employee for login employee
+go
+
+use HolyBirdResort
+go
+
+grant all privileges on database::HolyBirdResort to admin
 go

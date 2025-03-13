@@ -609,7 +609,7 @@ begin
 end
 go
 
-exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'2045637819',4, '2025-03-11 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'9530187426,4730261958,5867012349', N'HolyBirdResort', N'105,106,108'
+exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'2045637819',4, '2025-03-11 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'9530187426,4730261958,5867012349', N'HolyBirdResort 3', N'105,106,108'
 go
 
 exec dbo.DangKyGiaoDich 'B002', N'Nguyễn Duy Tùng', N'7281956340',4, '2025-03-14 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1390827456,4765810392,5306271948', N'HolyBirdResort 2', N'505,306,408'
@@ -630,7 +630,7 @@ go
 select * from dbo.Card
 go
 
-select * from dbo.Room
+select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'A001'
 go
 
 --b. Đặt chỗ
@@ -663,23 +663,7 @@ begin
 end
 go
 
-exec dbo.TimPhongTheoYeuCau N'Phòng hạng vừa, tầng 1, 3 người/phòng, 4 phòng, từ 1/5/2010, đến 13/5/2010'
-go
-
-select * from dbo.Card
-go
-
-create function KiemTraTheCoHieuLucKhong (@thephongID int) returns nvarchar(20)
-as
-begin
-	declare @trangthaihieuluc nvarchar(20)
-	select @trangthaihieuluc = (case when getdate() between dbo.BookingDetail.StartDate and dbo.BookingDetail.EndDate then N'Có hiệu lực' else N'Không hiệu lực' end) from dbo.Card
-	join dbo.BookingDetail on dbo.Card.BookingDetailID = dbo.BookingDetail.BookingDetailID
-	return @trangthaihieuluc
-end
-go
-
-select dbo.KiemTraTheCoHieuLucKhong(2)
+exec dbo.TimPhongTheoYeuCau N'Phòng hạng sang, tầng 1, 3 người/phòng, 4 phòng, từ 1/5/2010, đến 13/5/2010'
 go
 
 -- c. Hủy đăng ký
@@ -726,7 +710,7 @@ begin
 end
 go
 
-exec dbo.HuyChiTietDangKyGiaoDich N'A001', N'Lê Văn C'
+exec dbo.HuyChiTietDangKyGiaoDich N'A001', N'Nguyễn Duy Tùng'
 go
 
 select * from XemChiTietGiaoDichTheoMadoan(N'A001')
@@ -875,6 +859,9 @@ select * from dbo.Card
 go
 
 select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'C003'
+go
+
+-- e.Nhận phòng
 
 create procedure HuyGiaoDich @BookID int
 as
@@ -900,38 +887,36 @@ go
 select * from dbo.Booking
 go
 
--- e.Nhận phòng
-
-create procedure KichHoatTaiKhoan @ID nvarchar(20)
+create procedure NhanPhong @ID nvarchar(20)
 as
 begin
 	update dbo.Account set Status = N'Nhận phòng' where dbo.Account.GroupID = @ID
+	update C set C.Status = N'Đã kích hoạt' from dbo.Card C join dbo.BookingDetail BD on C.CustomerID = BD.CustomerID where BD.GroupID = @ID
+	update dbo.Room set Status = N'Đang sử dụng' where dbo.Room.RoomID in (select dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.GroupID = @ID)
 end
 go
 
-exec dbo.KichHoatTaiKhoan N'A001'
+exec dbo.NhanPhong N'B002'
+go
+
+select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'B002'
 go
 
 select * from dbo.Account
 go
 
-create procedure NhanPhong @MaGiaoDich int 
-as
-begin
-	update dbo.Room set Status = N'Đang sử dụng' where dbo.Room.RoomID in (select dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = @MaGiaoDich)
-end
+select * from dbo.Card
 go
-
 
 -- f. Trả phòng
 
-create procedure ThemBoiThuongChoResort @namenhanvien nvarchar(50), @roomid int, @magd int, @tienboithuong money
+create procedure ThemBoiThuongChoResort @namenhanvien nvarchar(50), @roomid int, @magd int, @tienboithuong money, @description nvarchar(max)
 as
 begin
 	declare @IDNV int, @tongtien money
 	select @IDNV = dbo.Employee.EmployeeID from dbo.Employee where dbo.Employee.Name = @namenhanvien
-	insert into dbo.Compensation(RoomID, EmployeeID, BookingID, Amount, CheckDate) select 
-		dbo.Room.RoomID, @IDNV, @magd,@tienboithuong, getdate()
+	insert into dbo.Compensation(RoomID, EmployeeID, BookingID, Amount, CheckDate, Description) select 
+		dbo.Room.RoomID, @IDNV, @magd,@tienboithuong, getdate(), @description
 	from dbo.Room where dbo.Room.RoomID = @roomid
 end
 go
@@ -939,7 +924,7 @@ go
 select * from dbo.Booking
 go
 
-exec dbo.ThemBoiThuongChoResort N'Nguyễn Duy Tùng', 105, 1,1000100
+exec dbo.ThemBoiThuongChoResort N'Nguyễn Duy Tùng', 505, 2,1000100, N'hư đèn ngủ'
 go
 
 select * from dbo.Compensation
@@ -970,11 +955,14 @@ begin
 		update dbo.BookingDetail set CompensationFee = @tienshare where dbo.BookingDetail.RoomID = @roomboithuong
 	end
 	--select distinct dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = 1 
-	update dbo.Room set Status = N'Trống' where dbo.Room.RoomID in (select distinct dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = @MaGD and dbo.Room.Status = N'Đã đặt')
+	update dbo.Room set Status = N'Trống' where dbo.Room.RoomID in (select distinct dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.BookingID = @MaGD and (dbo.Room.Status = N'Đã đặt' or dbo.Room.Status = N'Đang sử dụng'))
 end
 go
 
-exec dbo.TraPhong 1
+exec dbo.TraPhong 2
+go
+
+select * from dbo.Booking
 go
 
 select * from dbo.Payment

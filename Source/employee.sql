@@ -9,3 +9,15 @@ go
 
 exec dbo.DangKyGiaoDichTaiCho 'C003', N'Nguyễn Duy Tùng', N'8927314560',4, '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1087342659,0000000001,1000000001', N'605,806,908'
 go
+
+exec dbo.NhanPhong N'B002'
+go
+
+exec dbo.HuyGiaoDich 1
+go
+
+exec dbo.ThemBoiThuongChoResort N'Nguyễn Duy Tùng', 505, 2,1000100, N'hư đèn ngủ'
+go
+
+exec dbo.TraPhong 2
+go

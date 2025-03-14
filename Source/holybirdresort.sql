@@ -609,30 +609,6 @@ begin
 end
 go
 
-exec dbo.DangKyGiaoDich 'A001', N'Nguyễn Duy Tùng', N'2045637819',4, '2025-03-11 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'9530187426,4730261958,5867012349', N'HolyBirdResort 3', N'105,106,108'
-go
-
-exec dbo.DangKyGiaoDich 'B002', N'Nguyễn Duy Tùng', N'7281956340',4, '2025-03-14 10:00:00', '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1390827456,4765810392,5306271948', N'HolyBirdResort 2', N'505,306,408'
-go
-
-select * from dbo.Customer
-go
-
-select * from dbo.Booking
-go
-
-select * from dbo.BookingDetail
-go
-
-select * from dbo.Account
-go
-
-select * from dbo.Card
-go
-
-select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'A001'
-go
-
 --b. Đặt chỗ
 
 create procedure TimPhongTheoYeuCau @yeucau nvarchar(100)
@@ -661,9 +637,6 @@ begin
 	select @tongtien as TongTienPhongTheoYeuCau
 	select dbo.Room.* from dbo.Room join @suggest S on S.Info = dbo.Room.Type where dbo.Room.Floor = @sotang and dbo.Room.NumberPerson >= @songuoi and dbo.Room.Status = N'Trống'
 end
-go
-
-exec dbo.TimPhongTheoYeuCau N'Phòng hạng sang, tầng 1, 3 người/phòng, 4 phòng, từ 1/5/2010, đến 13/5/2010'
 go
 
 -- c. Hủy đăng ký
@@ -708,21 +681,6 @@ begin
 	delete from dbo.Card  where dbo.Card.BookingDetailID in (select dbo.BookingDetail.BookingDetailID from dbo.BookingDetail where dbo.BookingDetail.GroupID = @MaDoan and dbo.BookingDetail.Name = @Ten)
 	delete from dbo.BookingDetail where dbo.BookingDetail.GroupID = @MaDoan and dbo.BookingDetail.Name = @Ten
 end
-go
-
-exec dbo.HuyChiTietDangKyGiaoDich N'A001', N'Nguyễn Duy Tùng'
-go
-
-select * from XemChiTietGiaoDichTheoMadoan(N'A001')
-go
-
-select * from dbo.Card
-go
-
-select * from dbo.BookingDetail
-go
-
-select * from dbo.Booking
 go
 
 -- d. Thuê phòng
@@ -840,27 +798,6 @@ begin
 end
 go
 
-exec dbo.DangKyGiaoDichTaiCho 'C003', N'Nguyễn Duy Tùng', N'8927314560',4, '2025-06-20 10:00:00', N'Nguyễn Văn A,Trần Thị B,Lê Văn C', N'1087342659,0000000001,1000000001', N'605,806,908'
-go
-
-select * from dbo.Customer
-go
-
-select * from dbo.Booking
-go
-
-select * from dbo.BookingDetail
-go
-
-select * from dbo.Account
-go
-
-select * from dbo.Card
-go
-
-select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'C003'
-go
-
 -- e.Nhận phòng
 
 create procedure HuyGiaoDich @BookID int
@@ -875,18 +812,6 @@ begin
 end
 go
 
-exec dbo.HuyGiaoDich 1
-go
-
-select * from dbo.Card
-go
-
-select * from dbo.BookingDetail
-go
-
-select * from dbo.Booking
-go
-
 create procedure NhanPhong @ID nvarchar(20)
 as
 begin
@@ -894,18 +819,6 @@ begin
 	update C set C.Status = N'Đã kích hoạt' from dbo.Card C join dbo.BookingDetail BD on C.CustomerID = BD.CustomerID where BD.GroupID = @ID
 	update dbo.Room set Status = N'Đang sử dụng' where dbo.Room.RoomID in (select dbo.BookingDetail.RoomID from dbo.BookingDetail where dbo.BookingDetail.GroupID = @ID)
 end
-go
-
-exec dbo.NhanPhong N'B002'
-go
-
-select * from dbo.Room join dbo.BookingDetail on dbo.BookingDetail.RoomID = dbo.Room.RoomID where dbo.BookingDetail.GroupID = N'B002'
-go
-
-select * from dbo.Account
-go
-
-select * from dbo.Card
 go
 
 -- f. Trả phòng
@@ -919,18 +832,6 @@ begin
 		dbo.Room.RoomID, @IDNV, @magd,@tienboithuong, getdate(), @description
 	from dbo.Room where dbo.Room.RoomID = @roomid
 end
-go
-
-select * from dbo.Booking
-go
-
-exec dbo.ThemBoiThuongChoResort N'Nguyễn Duy Tùng', 505, 2,1000100, N'hư đèn ngủ'
-go
-
-select * from dbo.Compensation
-go
-
-select * from dbo.BookingDetail
 go
 
 create procedure TraPhong @MaGD int
@@ -959,21 +860,6 @@ begin
 end
 go
 
-exec dbo.TraPhong 2
-go
-
-select * from dbo.Booking
-go
-
-select * from dbo.Payment
-go
-
-select * from dbo.BookingDetail
-go
-
-select * from dbo.Room
-go
-
 -- Phân quyền cho database
 
 use master
@@ -982,16 +868,25 @@ go
 create login admin with password = 'admin'
 go
 
+create login employee with password = '1'
+go
+
+create login A2045637819 with password = '2045637819'
+go
+
 use HolyBirdResort
 go
 
 create user admin for login admin
 go
 
-exec sp_addrolemember 'db_owner', 'admin'
+create user employee for login employee
 go
 
-create user employee for login employee
+create user A2045637819 for login A2045637819
+go
+
+exec sp_addrolemember 'db_owner', 'admin'
 go
 
 use HolyBirdResort
